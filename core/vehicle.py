@@ -10,7 +10,7 @@ import time
 import numpy as np
 from core.utils import create_text
 from collections import deque
-from odometer import Odometer
+from core.odometer import Odometer
 
 class Vehicle:
     def __init__(self):
@@ -45,23 +45,32 @@ class Vehicle:
         #TODO connect wheel_speed change to an automatic update of self.motor.setMotor..
         self.wheel_speed = (0, 0, 0, 0)
         self.motor.setMotorModel(*self.wheel_speed)
+    
+    def update_wheels(self, event):
+        if event.key == ord('w'):
+            self.wheel_speed = (1500, 1500, 1500, 1500)
+        elif event.key == ord('s'):
+            self.wheel_speed = (-1500, -1500, -1500, -1500)
+    
+    def move(self, event=None, speed=None):
+        if event:
+            self.update_wheels(event)
+        elif speed:
+            self.wheel_speed = speed
+        self.motor.setMotorModel(*self.wheel_speed)
 
-    def rotate(self, degrees):
-        angle = degrees
-        bat_compensate = 7.5 / (self.motor.adc.recvADC(2) * 3)
-        while angle > 0:
-            W = 2000
-            VY = int(2000 * math.cos(math.radians(angle)))
-            VX = -int(2000 * math.sin(math.radians(angle)))
-            FR = VY - VX + W
-            FL = VY + VX - W
-            BL = VY - VX - W
-            BR = VY + VX + W
-            PWM.setMotorModel(FL, BL, FR, BR)
-            print("rotating")
-            time.sleep(5 * self.motor.time_proportion * bat_compensate / 1000)
-            angle -= 5
+    def custom_rotate(self, degrees):
+        starting_or = self.orientation
+        power = 2500
+        duration = abs(degrees)/360 * 2
+        start_time = time.time()
+        if degrees > 0:
+            self.motor.setMotorModel(*((-power+500), (-power+500), power, power))
+        elif degrees < 0:
+            self.motor.setMotorModel(*(power, power, (-power+500), (-power+500)))
+        while (time.time() - start_time) < duration:
+            continue
         self.halt()
         self.orientation += degrees
         self.orientation = self.orientation % 360
-
+        print(f'orientation change: {starting_or} --> {self.orientation}')

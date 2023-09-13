@@ -4,10 +4,10 @@ from Kit.PCA9685 import PCA9685
 from Kit.ADC import *
 
 class Motor:
-    def __init__(self):
+    def __init__(self, time_proportion=3):
         self.pwm = PCA9685(0x40, debug=True)
         self.pwm.setPWMFreq(50)
-        self.time_proportion = 3     #Depend on your own car,If you want to get the best out of the rotation mode, change the value by experimenting.
+        self.time_proportion = time_proportion   #Depend on your own car,If you want to get the best out of the rotation mode, change the value by experimenting.
         self.adc = Adc()
     def duty_range(self,duty1,duty2,duty3,duty4):
         if duty1>4095:
@@ -85,10 +85,8 @@ class Motor:
         bat_compensate =7.5/(self.adc.recvADC(2)*3)
         while True:
             W = 2000
-
             VY = int(2000 * math.cos(math.radians(angle)))
             VX = -int(2000 * math.sin(math.radians(angle)))
-
             FR = VY - VX + W
             FL = VY + VX - W
             BL = VY - VX - W
