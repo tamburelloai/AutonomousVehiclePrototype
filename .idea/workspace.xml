@@ -6,9 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="417bb19c-82b6-400c-b253-b0e69567a942" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/object_detection/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/object_detection/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/object_detection/main2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/object_detection/utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/odometer.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/odometer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/vehicle.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/vehicle.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,19 +56,30 @@
       <updated>1694569720109</updated>
       <workItem from="1694569722090" duration="2687000" />
       <workItem from="1694618713642" duration="1905000" />
-      <workItem from="1694620668795" duration="4047000" />
+      <workItem from="1694620668795" duration="6495000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/core/odometer.py</url>
-          <line>29</line>
+          <line>32</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>

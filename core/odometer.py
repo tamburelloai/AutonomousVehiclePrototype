@@ -2,30 +2,33 @@ import numpy as np
 from enum import Enum
 
 
+class WheelInfo:
+    def __init__(self):
+        self.WHEElBASE = 0  # cm
+        self.WHEEL_DIAMETER = 0  # cm
+        self.MOTOR_AXLE_DIAMETER = 0  # cm
+
+class CarInfo:
+    def __init__(self):
+        self.width_left_to_right = 0
+        self.length_head_to_tail = 0
+
 class Odometer:
     def __init__(self):
-        self.WHEElBASE = 0 #cm
-        self.WHEEL_DIAMETER  = 0 #cm
-        self.MOTOR_AXLE_DIAMETER = 0 #cm
-        self.WHEEL_INFO_cm = {
-            'wheelbase': 15,
-            'diameter': 5,
-            'Dpwr': np.pi * 5
-        }
-        self.CAR_INFO_cm = {
-            'width': 15,  # front wheel (left) to front wheel (right)
-            'length': 21  # rear wheels to front wheels
-        }
+        self.wheel_info = WheelInfo()
+        self.car_info = CarInfo()
         self.starting_position = (0, 0)
 
+
     def get_wheel_signs(self, wheel_movement):
+        '''Determines the type of movement just recorded based
+        on the wheel rotation information (wheel_movement)
+        wheel_movement: (tuple(int)) Four integers containing the power sent to each wheel
+        '''
         signs = np.where(wheel_movement > 0)
-        if all(signs): # all positive signs ==> forward
-           return 1
-        elif not any(signs): #all negative signs ==> backward
-            return -1
-        else: #mixture positive/negative signs ==> rotating
-            return 0
+        if all(signs): return 1
+        elif not any(signs): -1
+        else: return 0
 
     def get_movement_type(self, wheel_movement):
         assert isinstance(wheel_movement, np.ndarray)
@@ -38,11 +41,11 @@ class Odometer:
             pass
 
     def __call__(self, wheel_movement):
-        #record odometry data given wheel movement
+        '''Record odometry data and update values'''
+        movement_type = self.get_movement_type(wheel_movement)
         pass
 
-
 class MovementType(Enum):
-    FORWARD = 1
+    FORWARD  = 1
     ROTATING = 0
     BACKWARD = -1

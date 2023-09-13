@@ -27,6 +27,7 @@ class Vehicle:
         self.ultrasonic_threshold = {'backup': 5, 'avoid': 20} 
         self._init_camera()
         self.wheel_speed = (0, 0, 0, 0)
+        self.orientation = 0
 
     def _init_camera(self):
         self.camera = Picamera2()
@@ -45,6 +46,22 @@ class Vehicle:
         self.wheel_speed = (0, 0, 0, 0)
         self.motor.setMotorModel(*self.wheel_speed)
 
-
-
+    def rotate(self, degrees):
+        angle = degrees
+        bat_compensate = 7.5 / (self.motor.adc.recvADC(2) * 3)
+        while angle > 0:
+            W = 2000
+            VY = int(2000 * math.cos(math.radians(angle)))
+            VX = -int(2000 * math.sin(math.radians(angle)))
+            FR = VY - VX + W
+            FL = VY + VX - W
+            BL = VY - VX - W
+            BR = VY + VX + W
+            PWM.setMotorModel(FL, BL, FR, BR)
+            print("rotating")
+            time.sleep(5 * self.motor.time_proportion * bat_compensate / 1000)
+            angle -= 5
+        self.halt()
+        self.orientation += degrees
+        self.orientation = self.orientation % 360
 
