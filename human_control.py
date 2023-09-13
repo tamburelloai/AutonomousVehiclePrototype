@@ -4,7 +4,7 @@ import os
 import sys
 from picamera2 import Picamera2
 import time
-from core.Vehicle import Vehicle
+from core.vehicle import Vehicle
 import numpy as np
 import pickle
 from Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi.Code.Server.utils import create_text

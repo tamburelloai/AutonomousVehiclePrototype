@@ -4,7 +4,7 @@ import os
 import sys
 from picamera2 import Picamera2
 import time
-from core.Vehicle import Vehicle
+from core.vehicle import Vehicle
 import numpy as np
 import pickle
 from core.utils import create_text

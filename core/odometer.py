@@ -7,8 +7,16 @@ class Odometer:
         self.WHEElBASE = 0 #cm
         self.WHEEL_DIAMETER  = 0 #cm
         self.MOTOR_AXLE_DIAMETER = 0 #cm
-        self.movement = MovementType()
-
+        self.WHEEL_INFO_cm = {
+            'wheelbase': 15,
+            'diameter': 5,
+            'Dpwr': np.pi * 5
+        }
+        self.CAR_INFO_cm = {
+            'width': 15,  # front wheel (left) to front wheel (right)
+            'length': 21  # rear wheels to front wheels
+        }
+        self.starting_position = (0, 0)
 
     def get_wheel_signs(self, wheel_movement):
         signs = np.where(wheel_movement > 0)
@@ -22,11 +30,11 @@ class Odometer:
     def get_movement_type(self, wheel_movement):
         assert isinstance(wheel_movement, np.ndarray)
         movement = self.get_wheel_signs(wheel_movement)
-        if movement == self.movement.FORWARD:
+        if movement == MovementType.FORWARD:
             pass
-        elif movement == self.movement.ROTATING:
+        elif movement == MovementType.ROTATING:
             pass
-        elif movement == self.movement.BACKWARD:
+        elif movement == MovementType.BACKWARD:
             pass
 
     def __call__(self, wheel_movement):
