@@ -1,7 +1,7 @@
 import time
 import math
-from PCA9685 import PCA9685
-from ADC import *
+from Kit.PCA9685 import PCA9685
+from Kit.ADC import *
 
 class Motor:
     def __init__(self):

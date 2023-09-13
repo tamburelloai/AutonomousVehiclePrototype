@@ -1,5 +1,5 @@
 import time
-from PCA9685 import PCA9685
+from Kit.PCA9685 import PCA9685
 import os
 import pickle
 

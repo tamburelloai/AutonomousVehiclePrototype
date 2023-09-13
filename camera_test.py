@@ -7,7 +7,8 @@ import time
 from core.Vehicle import Vehicle
 import numpy as np
 import pickle
-from Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi.Code.Server.utils import create_text
+from core.utils import create_text
+
 
 colors = {
         'gray': (169, 169, 169),

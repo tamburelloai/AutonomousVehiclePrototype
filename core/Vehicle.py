@@ -1,14 +1,14 @@
-from Motor import Motor
-from servo import Servo
-from Line_Tracking import *
-from Ultrasonic import Ultrasonic
+from Kit.Motor import Motor
+from Kit.servo import Servo
+from Kit.Line_Tracking import *
+from Kit.Ultrasonic import Ultrasonic
 import picamera2
 import time
 from picamera2 import Picamera2
 import pygame
 import time
 import numpy as np
-from Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi.Code.Server.utils import create_text
+from core.utils import create_text
 from collections import deque
 
 
@@ -27,6 +27,16 @@ class Vehicle:
         self.ultrasonic_threshold = {'backup': 5, 'avoid': 20} 
         self._init_swiviel_states()
         self._init_camera()
+        
+        self.WHEEL_INFO_cm = {
+            'wheelbase': 15,
+            'diameter': 5,
+            'Dpwr': np.pi * 5
+        }
+        self.CAR_INFO_cm = {
+            'width': 15, #front wheel (left) to front wheel (right)
+            'length': 21    #rear wheels to front wheels
+        }
     
     def _init_camera(self):
         self.camera = Picamera2()
