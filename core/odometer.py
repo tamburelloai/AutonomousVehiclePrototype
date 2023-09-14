@@ -4,14 +4,14 @@ from enum import Enum
 
 class WheelInfo:
     def __init__(self):
-        self.WHEElBASE = 0  # cm
-        self.WHEEL_DIAMETER = 0  # cm
+        self.WHEEL_DIAMETER = 6.6
+        self.WHEEL_TIRE_WIDTH = 2.6
         self.MOTOR_AXLE_DIAMETER = 0  # cm
 
 class CarInfo:
     def __init__(self):
-        self.width_left_to_right = 0
-        self.length_head_to_tail = 0
+        self.width_left_to_right =  18
+        self.length_head_to_tail = 22
 
 class Odometer:
     def __init__(self):
