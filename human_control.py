@@ -5,16 +5,9 @@ import sys
 from picamera2 import Picamera2
 import time
 from core.vehicle import Vehicle
+from gui.main_window import MainWindow
 import numpy as np
 import pickle
-
-colors = {
-        'gray': (169, 169, 169),
-        'white': (255, 255, 255),
-        'red': (255, 0, 0),
-        'black': (0, 0, 0),
-        'yellow': (255, 255, 0)
-        }
 
 def get_image_surface(arr: np.ndarray):
     return pygame.surfarray.make_surface(arr)
@@ -34,14 +27,11 @@ if __name__ == "__main__":
     try:
         screenW, screenH = 950, 700
         camW, camH = 640, 480
-        vehicle = Vehicle()
-        pygame.init()
-        screen = pygame.display.set_mode((screenW, screenH))
+        window = MainWindow()
+        vehicle = Vehicle(initial_coordinates=(window.get_screen_center()))
+        window.update_vehicle_obstacle_readings(vehicle.odometer.get_vehicle_state(), None)
         session = True
         while session:
-            screen.fill((0, 0, 0))
-            #display_dashcam(screen, vehicle, screenW, screenH, camW, camH)
-            pygame.display.flip()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pickle_servo_angles(vehicle.servo_angles)
@@ -49,7 +39,8 @@ if __name__ == "__main__":
                     session = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key in [ord(x) for x in 'wasd']:
-                        vehicle.move(event)
+                        vehicle_state, object_coords = vehicle.move(event, cm=23)
+                        window.update_vehicle_obstacle_readings(vehicle_state, object_coords)
                     if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
                         vehicle._update_servo(event)
                     if event.key == ord('r'):
@@ -62,6 +53,7 @@ if __name__ == "__main__":
                         vehicle.custom_rotate(degrees=int(input('enter degrees: ')))
                 else:
                     vehicle.halt()
+            pygame.display.flip()
 
 
     except KeyboardInterrupt:

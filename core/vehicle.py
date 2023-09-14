@@ -11,15 +11,17 @@ import numpy as np
 from core.utils import create_text
 from collections import deque
 from core.odometer import Odometer
+import os
+
 
 class Vehicle:
-    def __init__(self):
+    def __init__(self, initial_coordinates=None):
         self.motor = Motor()
         self.servo = Servo()
         self.servo_angles = self.servo.initial
         self.ultrasonic_sensors = Ultrasonic()
         self.infrared_sensors = Line_Tracking()
-        self.odometer = Odometer()
+        self.odometer = Odometer(initial_coordinates)
         self.left_sensor = False
         self.middle_sensor = False
         self.right_sensor = False
@@ -43,21 +45,29 @@ class Vehicle:
         self.wheel_speed = (0, 0, 0, 0)
         self.motor.setMotorModel(*self.wheel_speed)
 
-    def move(self, event, units=1):
-        key_map = {ord('w'): 'forward', ord('s'): 'backward'}
+    def move(self, event, cm):
+        key_map = {ord('w'): 'forward', ord('s'): 'backward', ord('a'): 'left', ord('d'): 'right'}
         direction = key_map[event.key]
-        self._move(direction, units)
+        if direction == 'left':
+            self.custom_rotate(degrees=30)
+        elif direction == 'right':
+            self.custom_rotate(degrees=-30)
+        else:
+            self._move(direction, cm)
+        os.system('clear')
+        return self.odometer.get_vehicle_state(), self.get_object_coordinates()
 
-    def _move(self, direction, units):
-        power_map = {'forward': 1000, 'backward': -1000}
+    def _move(self, direction, cm):
+        '''moves vehicle one centimeter'''
+        power_map = {'forward': 1500, 'backward': -1500}
         power = power_map[direction]
-        duration = 1 * units
+        duration = 0.45 * (cm / 23)
         start_time = time.time()
         self.motor.setMotorModel(*(power, power, power, power))
         while (time.time() - start_time) < duration:
             continue
         self.halt()
-        self.odometer.update_vehicle_state(direction, units)
+        self.odometer.update_vehicle_state(direction, cm)
 
     def custom_rotate(self, degrees):
         def get_rotate_wheel_power(degrees):
@@ -65,7 +75,7 @@ class Vehicle:
                 return ((-power + 500), (-power + 500), power, power)
             else:
                 return (power, power, (-power + 500), (-power + 500))
-        power = 2500
+        power = 3000
         duration = abs(degrees)/360 * 2
         start_time = time.time()
         self.motor.setMotorModel(*get_rotate_wheel_power(degrees))
@@ -74,3 +84,19 @@ class Vehicle:
         self.halt()
         self.odometer.update_vehicle_yaw(degrees)
 
+    def get_coordinates(self):
+        x, y, yaw = self.odometer.get_vehicle_state()
+        return (x, y)
+
+    def get_object_coordinates(self):
+        x, y, yaw = self.odometer.get_vehicle_state()
+        distance = self.ultrasonic_sensors.get_distance()
+        if distance > 40:
+            return None
+        angle_radians = math.radians(yaw)
+        delta_x = x + (distance * math.cos(angle_radians))
+        delta_y = y + (distance * math.sin(angle_radians))
+        delta_x, delta_y = round(delta_x), round(delta_y)
+        return (delta_x, delta_y)
+        
+        
