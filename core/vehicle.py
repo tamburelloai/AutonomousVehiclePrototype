@@ -26,8 +26,6 @@ class Vehicle:
         self.key_states = {}
         self.ultrasonic_threshold = {'backup': 5, 'avoid': 20} 
         self._init_camera()
-        self.wheel_speed = (0, 0, 0, 0)
-        self.orientation = 0
 
     def _init_camera(self):
         self.camera = Picamera2()
@@ -42,35 +40,37 @@ class Vehicle:
         return self.camera.capture_array('main')[:, :, :3].transpose(1, 0, 2)
 
     def halt(self):
-        #TODO connect wheel_speed change to an automatic update of self.motor.setMotor..
         self.wheel_speed = (0, 0, 0, 0)
         self.motor.setMotorModel(*self.wheel_speed)
-    
-    def update_wheels(self, event):
-        if event.key == ord('w'):
-            self.wheel_speed = (1500, 1500, 1500, 1500)
-        elif event.key == ord('s'):
-            self.wheel_speed = (-1500, -1500, -1500, -1500)
-    
-    def move(self, event=None, speed=None):
-        if event:
-            self.update_wheels(event)
-        elif speed:
-            self.wheel_speed = speed
-        self.motor.setMotorModel(*self.wheel_speed)
 
-    def custom_rotate(self, degrees):
-        starting_or = self.orientation
-        power = 2500
-        duration = abs(degrees)/360 * 2
+    def move(self, event, units=1):
+        key_map = {ord('w'): 'forward', ord('s'): 'backward'}
+        direction = key_map[event.key]
+        self._move(direction, units)
+
+    def _move(self, direction, units):
+        power_map = {'forward': 1000, 'backward': -1000}
+        power = power_map[direction]
+        duration = 1 * units
         start_time = time.time()
-        if degrees > 0:
-            self.motor.setMotorModel(*((-power+500), (-power+500), power, power))
-        elif degrees < 0:
-            self.motor.setMotorModel(*(power, power, (-power+500), (-power+500)))
+        self.motor.setMotorModel(*(power, power, power, power))
         while (time.time() - start_time) < duration:
             continue
         self.halt()
-        self.orientation += degrees
-        self.orientation = self.orientation % 360
-        print(f'orientation change: {starting_or} --> {self.orientation}')
+        self.odometer.update_vehicle_state(direction, units)
+
+    def custom_rotate(self, degrees):
+        def get_rotate_wheel_power(degrees):
+            if degrees > 0:
+                return ((-power + 500), (-power + 500), power, power)
+            else:
+                return (power, power, (-power + 500), (-power + 500))
+        power = 2500
+        duration = abs(degrees)/360 * 2
+        start_time = time.time()
+        self.motor.setMotorModel(*get_rotate_wheel_power(degrees))
+        while (time.time() - start_time) < duration:
+            continue
+        self.halt()
+        self.odometer.update_vehicle_yaw(degrees)
+

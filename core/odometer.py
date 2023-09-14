@@ -1,5 +1,6 @@
 import numpy as np
 from enum import Enum
+import math
 
 
 class WheelInfo:
@@ -17,7 +18,27 @@ class Odometer:
     def __init__(self):
         self.wheel_info = WheelInfo()
         self.car_info = CarInfo()
-        self.starting_position = (0, 0)
+        self.data = {
+            'x_coord': 0,
+            'y_coord': 0,
+            'yaw': 0,
+        }
+
+    def get_vehicle_state(self):
+        return (x for x in self.data.values())
+
+    def update_vehicle_state(self, direction, units):
+        angle_radians = math.radians(self.data['yaw'])
+        delta_x = units * math.cos(angle_radians)
+        delta_y = units * math.sin(angle_radians)
+        self.data['x'] += round(delta_x)
+        self.data['y'] += round(delta_y)
+
+    def update_vehicle_yaw(self, degrees):
+        prev = self.data['yaw']
+        updated = (prev + degrees) % 360
+        self.data['yaw'] = updated
+
 
 
     def get_wheel_signs(self, wheel_movement):
