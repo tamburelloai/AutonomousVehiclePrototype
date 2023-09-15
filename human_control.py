@@ -42,6 +42,11 @@ if __name__ == "__main__":
                         vehicle_state, object_coords = vehicle.move(event, cm=23)
                         window.update_vehicle_obstacle_readings(vehicle_state, object_coords)
                         print(window.prior_positions)
+                    if event.key == pygame.K_SPACE:
+                        object_coords = vehicle.gather_servo_sweep_coords()
+                        window.draw_servo_sweep_coords(object_coords)
+                        
+                        
                     if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
                         vehicle._update_servo(event)
                     if event.key == ord('r'):

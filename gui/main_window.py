@@ -8,7 +8,7 @@ class MainWindow:
     def __init__(self):
         self.screen = pygame.display.set_mode((Constant.WIDTH, Constant.HEIGHT))
         self.draw_mapping_grid()
-        self.car_icon = pygame.transform.scale(pygame.image.load('car_icon.png'), (30, 30))
+        self.car_icon = pygame.transform.scale(pygame.image.load('/home/pi/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Code/Server/car_icon.png'), (30, 30))
         self.car_rect = self.car_icon.get_rect()
         self.prior_positions = []
         
@@ -34,7 +34,6 @@ class MainWindow:
     def update_vehicle_path(self):
         for (x, y) in self.prior_positions:
             pygame.draw.rect(self.screen, Color.BLUE, (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
-        
     
     def update_vehicle_position(self, vehicle_state):
         x, y, yaw = vehicle_state
@@ -49,6 +48,10 @@ class MainWindow:
         x, y = coordinates
         print(f'updating obstacle position to {x, y}')
         pygame.draw.rect(self.screen, Color.RED, (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
+    
+    def draw_servo_sweep_coords(self, coordinates_list) -> None:
+        for coordinates in coordinates_list:
+            self.update_obstacle_location(coordinates) 
            
 class Constant:
     WIDTH, HEIGHT = 650, 650 
