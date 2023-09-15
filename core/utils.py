@@ -50,3 +50,22 @@ def display_empty_bar(screen, vehicle, screenW, screenH, camW, camH, **kwargs):
     max_val_text = font.render(str(kwargs.get('max_val')), True, text_color)
     screen.blit(max_val_text, (xDelta, yDelta + rect_H +5))
     screen.blit(min_val_text, (xDelta + rect_W - 10, yDelta + rect_H + 5))
+
+class Constant:
+    GRID_WIDTH, GRID_HEIGHT = 650, 650 
+    WIDTH, HEIGHT = 1000, 750 
+    DASHCAM_WIDTH = DASHCAM_HEIGHT = (WIDTH - GRID_HEIGHT)
+    GRID_SIZE = 650 
+    CELL_SIZE = GRID_WIDTH // GRID_SIZE
+    LINEWIDTH = 1
+    CAMERA_RESOLUTION = (640, 480)
+    CAMERA_FPS = 30
+
+class Color:
+    WHITE = (255, 255, 255)
+    OFFWHITE = (50, 50, 50)
+    BLACK = (0, 0, 0)
+    RED = (255, 0, 0)
+    GREEN = (0, 255, 0)
+    BLUE = (0, 0, 255)
+    

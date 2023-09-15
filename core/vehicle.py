@@ -45,28 +45,25 @@ class Vehicle:
         self.wheel_speed = (0, 0, 0, 0)
         self.motor.setMotorModel(*self.wheel_speed)
     
+    def _gather_single_reading(self) -> dict:
+        x, y, yaw = self.odometer.get_vehicle_state()
+        yaw = self._adjust_for_servo_angle(yaw=yaw, servo_angle=self.servo_angles[0])
+        distance = self.ultrasonic_sensors.get_distance()
+        reading = {'x_y_yaw': (x, y, yaw), 'distance': distance}
+        return reading 
+    
+    def _adjust_for_servo_angle(self, yaw, servo_angle):
+        return yaw + servo_angle 
+    
     def _gather_readings(self) -> list[dict]:
-        def adjust_for_servo_angle(yaw, servo_angle):
-            return yaw
-         
-        def gather_reading()-> dict:
-            x, y, yaw = self.odometer.get_vehicle_state()
-            yaw = adjust_for_servo_angle(yaw=yaw, servo_angle=self.servo_angles[0])
-            distance = self.ultrasonic_sensors.get_distance()
-            reading = {'x_y_yaw': (x, y, yaw), 'distance': distance}
-            return reading
-        
         initial_servo_angles = self.servo_angles
         readings = []
         self.adjust_servo(direction='left', degrees=90)
         for i in range(180):
             self.adjust_servo(direction='right', degrees=1)
-            readings.append(gather_reading())
+            readings.append(self._gather_single_reading())
+        self.adjust_servo(direction='left', degrees=90)
         return readings
-        
-        
-        readings = self.servo.cycle()
-        return readings 
     
     def adjust_servo(self, direction, degrees):
         initial_angle = self.servo_angles[0]
@@ -104,13 +101,12 @@ class Vehicle:
         key_map = {ord('w'): 'forward', ord('s'): 'backward', ord('a'): 'left', ord('d'): 'right'}
         direction = key_map[event.key]
         if direction == 'left':
-            self.custom_rotate(degrees=30)
+            obstacle_coords = self.custom_rotate(degrees=30)
         elif direction == 'right':
-            self.custom_rotate(degrees=-30)
+            obstacle_coords = self.custom_rotate(degrees=-30)
         else:
-            self._move(direction, cm)
-        os.system('clear')
-        return self.odometer.get_vehicle_state(), self.get_object_coordinates()
+            obstacle_coords = self._move(direction, cm)
+        return self.odometer.get_vehicle_state(), obstacle_coords
 
     def _move(self, direction, cm):
         '''moves vehicle one centimeter'''
@@ -119,10 +115,12 @@ class Vehicle:
         duration = 0.45 * (cm / 23)
         start_time = time.time()
         self.motor.setMotorModel(*(power, power, power, power))
+        readings = []
         while (time.time() - start_time) < duration:
-            continue
+            readings.append(self._gather_single_reading())
         self.halt()
         self.odometer.update_vehicle_state(direction, cm)
+        return self._transform_readings_to_coordinates(readings)
 
     def custom_rotate(self, degrees):
         def get_rotate_wheel_power(degrees):
@@ -134,10 +132,13 @@ class Vehicle:
         duration = abs(degrees)/360 * 2
         start_time = time.time()
         self.motor.setMotorModel(*get_rotate_wheel_power(degrees))
+        readings = []
         while (time.time() - start_time) < duration:
-            continue
+            readings.append(self._gather_single_reading())
+
         self.halt()
         self.odometer.update_vehicle_yaw(degrees)
+        return self._transform_readings_to_coordinates(readings)
 
     def get_coordinates(self):
         x, y, yaw = self.odometer.get_vehicle_state()
@@ -147,29 +148,34 @@ class Vehicle:
         '''Obtain the proper (x,y) coords to plot ultrasonic reading
         (post-reading and/or real time)
         '''
-        def bad_distance_signal(distance):
-            '''returns true if distance in acceptable range (1, 40)'''
-            return any([(distance <= 0), (distance >= 40)]) 
         #logic to handle readings gathered from servo_sweep
         if reading_provided:
             x, y, yaw = reading_provided['x_y_yaw']
             distance = reading_provided['distance']
-            if bad_distance_signal(distance):
-                return None
             angle_radians = math.radians(yaw)
-            delta_x = x + (distance * math.cos(angle_radians))
-            delta_y = y + (distance * math.sin(angle_radians))
+            delta_x = x + -(distance * math.sin(angle_radians))
+            delta_y = y + -(distance * math.cos(angle_radians))
             delta_x, delta_y = round(delta_x), round(delta_y)
             return (delta_x, delta_y)
         #logic to handle real time ultrasonic sensor reading
         if not reading_provided:
             x, y, yaw = self.odometer.get_vehicle_state()
             distance = self.ultrasonic_sensors.get_distance()
-            if bad_distance_signal(distance):
-                return None
             angle_radians = math.radians(yaw)
-            delta_x = x + (distance * math.cos(angle_radians))
-            delta_y = y + (distance * math.sin(angle_radians))
+            delta_x = x + -(distance * math.sin(angle_radians))
+            delta_y = y + -(distance * math.cos(angle_radians))
             delta_x, delta_y = round(delta_x), round(delta_y)
             return (delta_x, delta_y)
-        
+    
+    def realtime_servo_sweep(self, window):
+        initial_servo_angles = self.servo_angles
+        self.adjust_servo(direction='left', degrees=90)
+        window.adjust_servo_sweep_line(direction='left', degrees=90)
+        for i in range(180):
+            reading = self._gather_single_reading()
+            coords = self.get_object_coordinates(reading)
+            window.update_obstacle_location(coords)
+            self.adjust_servo(direction='right', degrees=1)
+            window.adjust_servo_sweep_line(direction='right', degrees=1)
+        self.adjust_servo(direction='left', degrees=90) 
+        window.adjust_servo_sweep_line(direction='left', degrees=90) 

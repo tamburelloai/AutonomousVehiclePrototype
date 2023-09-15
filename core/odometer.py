@@ -38,9 +38,8 @@ class Odometer:
 
     def update_vehicle_state(self, direction, units):
         angle_radians = math.radians(self.data['yaw'])
-        #flipped on purpose for intuitive movement (forward ascends y axis rather than across y axis)
-        delta_x = -units * math.sin(angle_radians)
-        delta_y = -units * math.cos(angle_radians)
+        delta_x = -(units * math.sin(angle_radians))
+        delta_y = -(units * math.cos(angle_radians))
         if direction == 'forward':
             self.data['x_coord'] += round(delta_x)
             self.data['y_coord'] += round(delta_y)
