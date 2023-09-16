@@ -30,8 +30,7 @@ class MainWindow:
         self.object_detection_icon_off = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/object_detection_off.png'), (250, 30))
         self.mapping_icon_on = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/mapping_on.png'), (250, 30))
         self.mapping_icon_off = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/mapping_off.png'), (250, 30))
- 
-    
+     
     def update_dashcam(self, dashcam_view):
         resized_image = cv2.resize(dashcam_view, (Constant.DASHCAM_WIDTH-1, Constant.DASHCAM_HEIGHT))
         image_surface = pygame.surfarray.make_surface(resized_image)
@@ -63,7 +62,10 @@ class MainWindow:
         vehicle_yaw   = f'          YAW: {yaw}'
         self.screen.blit(self.font.render(vehicle_coord, True, Color.WHITE), coord_location) 
         self.screen.blit(self.font.render(vehicle_yaw, True, Color.WHITE), yaw_location) 
-        
+    
+    def draw_prior_positions(self):
+        pygame.draw.lines(self.screen, Color.BLUE, False, self.prior_positions, 1)
+
     def get_grid_center(self):
         return (Constant.GRID_WIDTH // 2, Constant.GRID_HEIGHT // 2)
     
@@ -81,10 +83,35 @@ class MainWindow:
         for coordinates in obstacle_coords:
             self.update_obstacle_location(coordinates) 
     
-    def update_vehicle_path(self):
-        for (x, y) in self.prior_positions:
-            pygame.draw.rect(self.screen, Color.BLUE, (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
+    # def _path_loop_formed(self):
+    #     '''check if loop is formed from prior positions containing a duplicate'''
+    #     if len(self.prior_positions) != len(set(self.prior_positions)):
+    #         repeated_coordinate = self.prior_positions.pop(-1)
+    #         first_index = self.prior_positions.index(repeated_coordinate) #first appearance of now repeated coordinate
+    #         loop = self.prior_positions[first_index:]
+    #         loop.append(repeated_coordinate)
+    #         return loop
+    #     return None
     
+    # def _object_free_area(self, loop):
+    #     #assert no values for coordinates between within looped area
+    #     pass
+    
+    # def _check_safe_zone_found(self):
+    #     loop = self._path_loop_formed()
+    #     if loop and self._object_free_area(loop):
+    #         return loop
+    #     return False
+    
+    def update_vehicle_path(self):
+        #safe_zone_found = self._check_safe_zone_found()
+        #if safe_zone_found:
+        #    self._fill_safe_zone(safe_zone_found)
+        #    self.prior_positions = []
+        #else:
+            #pygame.draw.lines(self.screen, Color.BLUE, False, self.prior_positions, 1)
+        pygame.draw.lines(self.screen, Color.BLUE, False, self.prior_positions, 1)
+            
     def update_vehicle_position(self, vehicle_state):
         x, y, yaw = vehicle_state
         print(f'updating vehicle position to {x, y}')
@@ -108,5 +135,14 @@ class MainWindow:
     def draw_servo_sweep_coords(self, coordinates_list) -> None:
         for coordinates in coordinates_list:
             self.update_obstacle_location(coordinates) 
+            
+    def draw_ultrasonic_beam(self, coords):
+        '''Start and ending coordinates for ultrasonic reading'''
+        coords_start, coords_end = coords
+        pygame.draw.line(self.screen, Color.GREEN, coords_start, coords_end, Constant.LINEWIDTH)
+        pygame.display.flip()
+        
+    def debug_print(self):
+        print(self.prior_positions)
            
 

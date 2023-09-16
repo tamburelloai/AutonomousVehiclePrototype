@@ -27,6 +27,7 @@ class Vehicle:
         self.right_sensor = False
         self.key_states = {}
         self.ultrasonic_threshold = {'backup': 5, 'avoid': 20} 
+        self.max_ultrasonic_distance = 40
         self._init_camera()
 
     def _init_camera(self):
@@ -167,15 +168,32 @@ class Vehicle:
             delta_x, delta_y = round(delta_x), round(delta_y)
             return (delta_x, delta_y)
     
-    def realtime_servo_sweep(self, window):
+    def _get_ultrasonic_beam_coords(self, degrees):
+        x1, y1, yaw = self.odometer.get_vehicle_state()
+        endx, endy = self._get_max_ultrasonic_distance_coords(x1, y1, yaw+degrees)
+        return [(x1, y1), (endx, endy)]
+    
+    def _get_max_ultrasonic_distance_coords(self, x, y, yaw):
+        distance = self.max_ultrasonic_distance
+        angle_radians = math.radians(yaw)
+        delta_x = x + -(distance * math.sin(angle_radians))
+        delta_y = y + -(distance * math.cos(angle_radians))
+        delta_x, delta_y = round(delta_x), round(delta_y)
+        return (delta_x, delta_y)
+        
+    def realtime_ultrasonic_sweep(self, window):
         initial_servo_angles = self.servo_angles
+        window.draw_ultrasonic_beam(coords=self._get_ultrasonic_beam_coords(degrees=0))
         self.adjust_servo(direction='left', degrees=90)
-        window.adjust_servo_sweep_line(direction='left', degrees=90)
+        time.sleep(1)
+        window.draw_ultrasonic_beam(coords=self._get_ultrasonic_beam_coords(degrees=90))
         for i in range(180):
-            reading = self._gather_single_reading()
-            coords = self.get_object_coordinates(reading)
-            window.update_obstacle_location(coords)
+            if i % 10 == 0:
+                reading = self._gather_single_reading()
+                coords = self.get_object_coordinates(reading)
+                window.update_obstacle_location(coords)
+            if i % 3 == 0:
+                window.draw_ultrasonic_beam(coords=self._get_ultrasonic_beam_coords(degrees=90-i))
             self.adjust_servo(direction='right', degrees=1)
-            window.adjust_servo_sweep_line(direction='right', degrees=1)
         self.adjust_servo(direction='left', degrees=90) 
         window.adjust_servo_sweep_line(direction='left', degrees=90) 

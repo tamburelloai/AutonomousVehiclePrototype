@@ -54,6 +54,8 @@ if __name__ == "__main__":
                         vehicle._look_right(screen)
                     if event.key == ord('o'):
                         vehicle.custom_rotate(degrees=int(input('enter degrees: ')))
+                    if event.key == ord('u'):
+                        vehicle.realtime_ultrasonic_sweep(window)
                     if event.key == ord('t'):
                         if window.mode['object_detection']:
                             window.mode['object_detection'] = False
@@ -71,6 +73,7 @@ if __name__ == "__main__":
                     vehicle.halt()
             window.update_dashcam(dashcam_view=vehicle.get_vision())
             window.draw_text_options()
+            window.debug_print()
             pygame.display.flip()
 
     except KeyboardInterrupt:
