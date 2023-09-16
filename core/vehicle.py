@@ -11,6 +11,7 @@ import numpy as np
 from core.utils import create_text
 from collections import deque
 from core.odometer import Odometer
+from core.objdet import ObjDetModel
 import os
 
 
@@ -29,6 +30,7 @@ class Vehicle:
         self.ultrasonic_threshold = {'backup': 5, 'avoid': 20} 
         self.max_ultrasonic_distance = 40
         self._init_camera()
+        self.objdet = ObjDetModel()
 
     def _init_camera(self):
         self.camera = Picamera2()
@@ -46,9 +48,10 @@ class Vehicle:
         self.wheel_speed = (0, 0, 0, 0)
         self.motor.setMotorModel(*self.wheel_speed)
     
-    def _gather_single_reading(self) -> dict:
+    def _gather_single_reading(self, adjust=False) -> dict:
         x, y, yaw = self.odometer.get_vehicle_state()
-        yaw = self._adjust_for_servo_angle(yaw=yaw, servo_angle=self.servo_angles[0])
+        if adjust:
+            yaw = self._adjust_for_servo_angle(yaw=yaw, servo_angle=self.servo_angles[0])
         distance = self.ultrasonic_sensors.get_distance()
         reading = {'x_y_yaw': (x, y, yaw), 'distance': distance}
         return reading 
@@ -99,15 +102,18 @@ class Vehicle:
         return res
 
     def move(self, event, cm):
-        key_map = {ord('w'): 'forward', ord('s'): 'backward', ord('a'): 'left', ord('d'): 'right'}
-        direction = key_map[event.key]
-        if direction == 'left':
-            obstacle_coords = self.custom_rotate(degrees=30)
-        elif direction == 'right':
-            obstacle_coords = self.custom_rotate(degrees=-30)
+        if not any([event, cm]):
+            return self.odometer.get_vehicle_state(), []
         else:
-            obstacle_coords = self._move(direction, cm)
-        return self.odometer.get_vehicle_state(), obstacle_coords
+            key_map = {ord('w'): 'forward', ord('s'): 'backward', ord('a'): 'left', ord('d'): 'right'}
+            direction = key_map[event.key]
+            if direction == 'left':
+                obstacle_coords = self.custom_rotate(degrees=30)
+            elif direction == 'right':
+                obstacle_coords = self.custom_rotate(degrees=-30)
+            else:
+                obstacle_coords = self._move(direction, cm)
+            return self.odometer.get_vehicle_state(), obstacle_coords
 
     def _move(self, direction, cm):
         '''moves vehicle one centimeter'''
@@ -154,8 +160,8 @@ class Vehicle:
             x, y, yaw = reading_provided['x_y_yaw']
             distance = reading_provided['distance']
             angle_radians = math.radians(yaw)
-            delta_x = x + -(distance * math.sin(angle_radians))
-            delta_y = y + -(distance * math.cos(angle_radians))
+            delta_x = x - (distance * math.sin(angle_radians))
+            delta_y = y - (distance * math.cos(angle_radians))
             delta_x, delta_y = round(delta_x), round(delta_y)
             return (delta_x, delta_y)
         #logic to handle real time ultrasonic sensor reading
@@ -163,8 +169,8 @@ class Vehicle:
             x, y, yaw = self.odometer.get_vehicle_state()
             distance = self.ultrasonic_sensors.get_distance()
             angle_radians = math.radians(yaw)
-            delta_x = x + -(distance * math.sin(angle_radians))
-            delta_y = y + -(distance * math.cos(angle_radians))
+            delta_x = x - (distance * math.sin(angle_radians))
+            delta_y = y - (distance * math.cos(angle_radians))
             delta_x, delta_y = round(delta_x), round(delta_y)
             return (delta_x, delta_y)
     
@@ -176,24 +182,26 @@ class Vehicle:
     def _get_max_ultrasonic_distance_coords(self, x, y, yaw):
         distance = self.max_ultrasonic_distance
         angle_radians = math.radians(yaw)
-        delta_x = x + -(distance * math.sin(angle_radians))
-        delta_y = y + -(distance * math.cos(angle_radians))
+        delta_x = x - (distance * math.sin(angle_radians))
+        delta_y = y - (distance * math.cos(angle_radians))
         delta_x, delta_y = round(delta_x), round(delta_y)
         return (delta_x, delta_y)
         
     def realtime_ultrasonic_sweep(self, window):
         initial_servo_angles = self.servo_angles
-        window.draw_ultrasonic_beam(coords=self._get_ultrasonic_beam_coords(degrees=0))
         self.adjust_servo(direction='left', degrees=90)
         time.sleep(1)
         window.draw_ultrasonic_beam(coords=self._get_ultrasonic_beam_coords(degrees=90))
-        for i in range(180):
+        for i in range(181):
             if i % 10 == 0:
-                reading = self._gather_single_reading()
+                reading = self._gather_single_reading(adjust=True)
                 coords = self.get_object_coordinates(reading)
                 window.update_obstacle_location(coords)
-            if i % 3 == 0:
+            if i % 3 == 0 or i == 180:
                 window.draw_ultrasonic_beam(coords=self._get_ultrasonic_beam_coords(degrees=90-i))
             self.adjust_servo(direction='right', degrees=1)
         self.adjust_servo(direction='left', degrees=90) 
-        window.adjust_servo_sweep_line(direction='left', degrees=90) 
+        window.update_vehicle_obstacle_readings(self.odometer.get_vehicle_state(), [])
+        
+    def detect_objects(self):
+        return self.objdet.predict(self.get_vision())

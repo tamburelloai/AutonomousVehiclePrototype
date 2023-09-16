@@ -3,6 +3,7 @@ import math
 from core.utils import Constant, Color
 from advanced_mapping.grid import Grid
 import cv2
+from collections import defaultdict
 
 
 pygame.init()
@@ -11,17 +12,19 @@ pygame.init()
 class MainWindow:
     def __init__(self):
         self.screen = pygame.display.set_mode((Constant.WIDTH, Constant.HEIGHT))
-        #self.draw_mapping_grid()
         self.prior_positions = []
         self._all_found_obstacles = []
         self._load_icons()
         self._set_modes()
         self.font = pygame.font.Font(None, 36)
+        self.obstacle_cache = defaultdict(int)
+        self._all_found_obstacle_coords = []
+        self.dashcam_display_offset = (Constant.GRID_WIDTH+1, (Constant.HEIGHT - Constant.DASHCAM_HEIGHT - 98))
     
     def _set_modes(self) -> None:
         self.mode = {}
-        self.mode['object_detection'] = {'status': False}
-        self.mode['mapping'] = {'status': False}
+        self.mode['object_detection'] = {'status': True}
+        self.mode['mapping'] = {'status': True}
         
     def _load_icons(self) -> None:
         self.car_icon = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/car_icon.png'), (30, 30))
@@ -34,7 +37,7 @@ class MainWindow:
     def update_dashcam(self, dashcam_view):
         resized_image = cv2.resize(dashcam_view, (Constant.DASHCAM_WIDTH-1, Constant.DASHCAM_HEIGHT))
         image_surface = pygame.surfarray.make_surface(resized_image)
-        self.screen.blit(image_surface, (Constant.GRID_WIDTH+1, (Constant.HEIGHT - Constant.DASHCAM_HEIGHT - 98)))
+        self.screen.blit(image_surface, self.dashcam_display_offset)
         
     def draw_mapping_grid(self):
         for x in range(0, Constant.GRID_WIDTH, Constant.CELL_SIZE):
@@ -111,21 +114,29 @@ class MainWindow:
         #else:
             #pygame.draw.lines(self.screen, Color.BLUE, False, self.prior_positions, 1)
         pygame.draw.lines(self.screen, Color.BLUE, False, self.prior_positions, 1)
-            
+    
+        
     def update_vehicle_position(self, vehicle_state):
         x, y, yaw = vehicle_state
-        print(f'updating vehicle position to {x, y}')
         car_icon = pygame.transform.rotate(self.car_icon, yaw)
-        self.screen.fill((0, 0, 0))
-        #self.draw_mapping_grid()
-        self.screen.blit(car_icon, (x-15, y-15))
+        if yaw == 0:
+            self.screen.blit(car_icon, (x-15, y))
+        elif yaw % 45 == 0:
+            self.screen.blit(car_icon, (x-15, y-15))
+        elif yaw % 30 == 0:
+            self.screen.blit(car_icon, (x-20, y-20))
+                
+            
         self.prior_positions.append((x,y))
         self.draw_vehicle_state(vehicle_state)
         
     def update_obstacle_location(self, coordinates):
+        if not coordinates:
+            return
         x, y = coordinates
-        print(f'updating obstacle position to {x, y}')
-        obstacle = pygame.draw.rect(self.screen, Color.RED, (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
+        self.obstacle_cache[(x, y)] += 0.10
+        opacity_val = max(1, self.obstacle_cache[(x,y)])
+        obstacle = pygame.draw.rect(self.screen, (255, 0, 0, opacity_val), (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
         self._all_found_obstacles.append(obstacle)  # Store the rect in the list
 
     def _redraw_all_found_obstacles(self):
@@ -141,8 +152,55 @@ class MainWindow:
         coords_start, coords_end = coords
         pygame.draw.line(self.screen, Color.GREEN, coords_start, coords_end, Constant.LINEWIDTH)
         pygame.display.flip()
+    
+    def _draw_bounding_box(self, pred):
+        x0, y0, xN, yN = pred[:-1]
+        class_name = pred[-1]
+                
+        original_height = 640
+        original_width = 480
+        new_width = 350
+        new_height = 350
+
+        # Calculate scaling factors
+        x_scale = new_width / original_width
+        y_scale = new_height / original_height
+
+        # Scale the coordinates to fit the new image size (350x350)
+        x0_350 = int(x0 * x_scale)
+        y0_350 = int(y0 * y_scale)
+        xN_350 = int(xN * x_scale)
+        yN_350 = int(yN * y_scale)
+
+        # Calculate width and height on the new image
+        width_350 = xN_350 - x0_350
+        height_350 = yN_350 - y0_350
+        
+        # Draw the rectangle on the new image (350x350)
+        pygame.draw.rect(self.screen, (0, 255, 0), (x0_350+Constant.GRID_WIDTH, 
+                                                    y0_350+ (Constant.HEIGHT - Constant.DASHCAM_HEIGHT - 98), 
+                                                    width_350, height_350), 2)  # 2 is the width of the outline
+        text_surface = self.font.render(class_name, True, (255, 255, 255))
+        text_rect = text_surface.get_rect()
+        text_rect.topleft = (x0_350,y0_350)  # You can adjust the text position here
+        self.screen.blit(text_surface, text_rect)
+           
+    def draw_bounding_boxes(self, preds):
+        for pred in preds:
+            self._draw_bounding_box(pred)
         
     def debug_print(self):
         print(self.prior_positions)
+    
+    def flip(self, vehicle_state, obstacle_coords, dashcam_view, objects_detected):
+        self.screen.fill((0, 0, 0))
+        if self.mode['mapping']['status'] == True:
+            self.update_vehicle_obstacle_readings(vehicle_state, obstacle_coords)
+        self.update_dashcam(dashcam_view)
+        if self.mode['object_detection']['status'] == True:
+            self.draw_bounding_boxes(objects_detected)
+        self.draw_text_options()
+        #self.debug_print()
+        pygame.display.flip()
            
 

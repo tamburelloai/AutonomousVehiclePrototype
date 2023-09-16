@@ -28,9 +28,10 @@ if __name__ == "__main__":
         window = MainWindow()
         vehicle = Vehicle(initial_coordinates=(window.get_grid_center()))
         window.initialize_vehicle_in_map(vehicle_state=vehicle.odometer.get_vehicle_state())
-
         session = True
         while session:
+            vehicle_state, obstacle_coords = vehicle.move(None, cm=0)
+            objects_detected = None
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pickle_servo_angles(vehicle.servo_angles)
@@ -39,7 +40,6 @@ if __name__ == "__main__":
                 elif event.type == pygame.KEYDOWN:
                     if event.key in [ord(x) for x in 'wasd']:
                         vehicle_state, obstacle_coords = vehicle.move(event, cm=23)
-                        window.update_vehicle_obstacle_readings(vehicle_state, obstacle_coords)
                     if event.key == pygame.K_SPACE:
                         object_coords = vehicle.gather_servo_sweep_coords()
                         window.draw_servo_sweep_coords(object_coords)
@@ -57,24 +57,22 @@ if __name__ == "__main__":
                     if event.key == ord('u'):
                         vehicle.realtime_ultrasonic_sweep(window)
                     if event.key == ord('t'):
-                        if window.mode['object_detection']:
-                            window.mode['object_detection'] = False
+                        if window.mode['object_detection']['status'] == True:
+                            window.mode['object_detection']['status'] = False
                         else:
-                            window.mode['object_detection'] = True
-                        pygame.display.flip()
+                            window.mode['object_detection']['status'] = True
                     if event.key == ord('m'):
-                        if window.mode['mapping']:
-                            window.mode['mapping'] = False
+                        if window.mode['mapping']['status'] == True:
+                            window.mode['mapping']['status'] = False
                         else:
-                            window.mode['mapping'] = True
-                        
-                        pygame.display.flip()
+                            window.mode['mapping']['status'] = True
                 else:
                     vehicle.halt()
-            window.update_dashcam(dashcam_view=vehicle.get_vision())
-            window.draw_text_options()
-            window.debug_print()
-            pygame.display.flip()
+            dashcam_view = vehicle.get_vision()
+            if window.mode['object_detection']['status'] == True:
+                objects_detected = vehicle.detect_objects()
+            window.flip(vehicle_state, obstacle_coords, dashcam_view, objects_detected)
+           
 
     except KeyboardInterrupt:
         pickle_servo_angles(vehicle.servo_angles)

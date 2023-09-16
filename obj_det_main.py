@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 import tflite_runtime.interpreter as tflite
 from picamera2 import MappedArray, Picamera2, Preview
-
 from core.vehicle import Vehicle
 
 normalSize = (640, 480)
@@ -12,7 +11,9 @@ rectangles = []
 
 
 class ObjDetModel:
-    def __init__(self, model_checkpoint_file: str, target_labels_file: str):
+    def __init__(self):
+        model_path = '/home/pi/Freenove/Code/Server/object_detection/ssd_mobilenet.tflite'
+        label_path = '/home/pi/Freenove/Code/Server/object_detection/coco_labels.txt'
         self.score_threshold = 0.5
         self.labels = self.read_labels(target_labels_file)
         self._initialize_interpreter(model_checkpoint_file)
@@ -39,7 +40,8 @@ class ObjDetModel:
         floating_model = (self.interpreter_details['dtype'] == np.float32)
         width = self.interpreter_details['width']
         height = self.interpreter_details['height']
-        rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        #rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        rgb = image
         initial_shapes = self.create_initial_shape_dict(rgb.shape)
         picture = cv2.resize(rgb, (width, height))
         input_data = np.expand_dims(picture, axis=0)
@@ -72,6 +74,7 @@ class ObjDetModel:
                 box  = [xmin, ymin, xmax, ymax]
                 rectangles.append(box)
                 rectangles[-1].append(self.labels[classId])
+        return rectangles
 
     def draw_boxes(self, request):
         def draw_rect(rect) -> None:
@@ -91,8 +94,8 @@ class ObjDetModel:
 
 
 if __name__ == '__main__':
-    model_path = '/home/pi/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Code/Server/object_detection/ssd_mobilenet.tflite'
-    label_path = '/home/pi/Freenove_4WD_Smart_Car_Kit_for_Raspberry_Pi/Code/Server/object_detection/coco_labels.txt'
+    model_path = '/home/pi/Freenove/Code/Server/object_detection/ssd_mobilenet.tflite'
+    label_path = '/home/pi/Freenove/Code/Server/object_detection/coco_labels.txt'
     model = ObjDetModel(model_path, label_path)
     vehicle = Vehicle()
     while True:

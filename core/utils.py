@@ -54,8 +54,8 @@ def display_empty_bar(screen, vehicle, screenW, screenH, camW, camH, **kwargs):
 class Constant:
     GRID_WIDTH, GRID_HEIGHT = 650, 650 
     WIDTH, HEIGHT = 1000, 750 
-    DASHCAM_WIDTH = DASHCAM_HEIGHT = (WIDTH - GRID_HEIGHT)
-    GRID_SIZE = 650 
+    DASHCAM_WIDTH = DASHCAM_HEIGHT = (WIDTH - GRID_WIDTH)
+    GRID_SIZE = 500
     CELL_SIZE = GRID_WIDTH // GRID_SIZE
     LINEWIDTH = 1
     CAMERA_RESOLUTION = (640, 480)
