@@ -52,10 +52,10 @@ def display_empty_bar(screen, vehicle, screenW, screenH, camW, camH, **kwargs):
     screen.blit(min_val_text, (xDelta + rect_W - 10, yDelta + rect_H + 5))
 
 class Constant:
-    GRID_WIDTH, GRID_HEIGHT = 650, 650 
-    WIDTH, HEIGHT = 1000, 750 
+    GRID_WIDTH, GRID_HEIGHT = 600, 600
+    WIDTH, HEIGHT = 1024, 700
     DASHCAM_WIDTH = DASHCAM_HEIGHT = (WIDTH - GRID_WIDTH)
-    GRID_SIZE = 500
+    GRID_SIZE = 100
     CELL_SIZE = GRID_WIDTH // GRID_SIZE
     LINEWIDTH = 1
     CAMERA_RESOLUTION = (640, 480)
@@ -68,4 +68,16 @@ class Color:
     RED = (255, 0, 0)
     GREEN = (0, 255, 0)
     BLUE = (0, 0, 255)
-    
+    LIGHTBLUE = (5, 228, 252)
+    DARKBLUE = (13, 49, 148)
+
+def apply_environment_obstacles(grid, obstacle_coordinates):
+    for (x,y) in obstacle_coordinates:
+        grid[x, y] = 4
+    return grid
+
+def build_grid_from_environment(window):
+    grid = np.zeros((Constant.GRID_HEIGHT, Constant.GRID_WIDTH))
+    obstacles = window._all_found_obstacles
+    grid = apply_environment_obstacles(grid, obstacles)
+    return grid

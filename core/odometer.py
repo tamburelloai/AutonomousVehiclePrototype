@@ -20,6 +20,9 @@ class Odometer:
     def __init__(self, initial_coordinates=None):
         self.wheel_info = WheelInfo()
         self.car_info = CarInfo()
+        self._init_initial_state(initial_coordinates)
+           
+    def _init_initial_state(self, initial_coordinates):
         self.data = {
             'x_coord': 0,
             'y_coord': 0,
@@ -29,6 +32,10 @@ class Odometer:
             x, y = initial_coordinates
             self.data['x_coord'] = x
             self.data['y_coord'] = y
+        first_position = self.data.copy()
+        first_position['duration'] = 0
+        first_position['direction'] = 'forward'
+        self._all_prior_vehicle_states = [first_position]
     
     def get_datastring(self):
         return f"X: {self.data['x_coord']} | Y: {self.data['y_coord']} | YAW: {self.data['yaw']}"

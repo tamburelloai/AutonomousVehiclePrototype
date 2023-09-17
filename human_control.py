@@ -10,6 +10,7 @@ from gui.main_window import MainWindow
 import numpy as np
 import pickle
 from core.utils import Constant, Color
+from core.utils import build_grid_from_gui
 import threading
 
 
@@ -53,6 +54,7 @@ if __name__ == "__main__":
                     if event.key == pygame.K_PERIOD:
                         vehicle._look_right(screen)
                     if event.key == ord('o'):
+                        vehicle.return_to_origin()
                         vehicle.custom_rotate(degrees=int(input('enter degrees: ')))
                     if event.key == ord('u'):
                         vehicle.realtime_ultrasonic_sweep(window)
@@ -66,14 +68,18 @@ if __name__ == "__main__":
                             window.mode['mapping']['status'] = False
                         else:
                             window.mode['mapping']['status'] = True
+                    if event.key == ord('f'):
+                        window.mode['search']['status'] = True
+                        grid = build_grid_from_environment(window)
+                        vehicle.navigate(grid, start, stop)
+                        window.mode['search']['status'] = True
                 else:
                     vehicle.halt()
             dashcam_view = vehicle.get_vision()
             if window.mode['object_detection']['status'] == True:
                 objects_detected = vehicle.detect_objects()
-            window.flip(vehicle_state, obstacle_coords, dashcam_view, objects_detected)
-           
-
+            window.flip(vehicle_state, obstacle_coords, dashcam_view, objects_detected)           
+            print(vehicle.odometer._all_prior_vehicle_states)
     except KeyboardInterrupt:
         pickle_servo_angles(vehicle.servo_angles)
 

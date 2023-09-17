@@ -12,6 +12,8 @@ from core.utils import create_text
 from collections import deque
 from core.odometer import Odometer
 from core.objdet import ObjDetModel
+from core.utils import *
+from routing.search import AStar
 import os
 
 
@@ -107,12 +109,18 @@ class Vehicle:
         else:
             key_map = {ord('w'): 'forward', ord('s'): 'backward', ord('a'): 'left', ord('d'): 'right'}
             direction = key_map[event.key]
+            duration = 0
             if direction == 'left':
                 obstacle_coords = self.custom_rotate(degrees=30)
             elif direction == 'right':
                 obstacle_coords = self.custom_rotate(degrees=-30)
             else:
-                obstacle_coords = self._move(direction, cm)
+                obstacle_coords, duration = self._move(direction, cm)
+            
+            current_position = self.odometer.data.copy()
+            current_position['duration'] = duration
+            current_position['direction'] = direction 
+            self.odometer._all_prior_vehicle_states.append(current_position)
             return self.odometer.get_vehicle_state(), obstacle_coords
 
     def _move(self, direction, cm):
@@ -127,7 +135,21 @@ class Vehicle:
             readings.append(self._gather_single_reading())
         self.halt()
         self.odometer.update_vehicle_state(direction, cm)
-        return self._transform_readings_to_coordinates(readings)
+        return self._transform_readings_to_coordinates(readings), duration
+    
+    def _move_for_duration(self, duration, direction):
+        '''moves vehicle one centimeter'''
+        power = 1500
+        cm = round((23 * duration) / 0.45)
+        start_time = time.time()
+        self.motor.setMotorModel(*(power, power, power, power))
+        readings = []
+        while (time.time() - start_time) < duration:
+            readings.append(self._gather_single_reading())
+        self.halt()
+        self.odometer.update_vehicle_state(direction=direction, units=cm)
+        return self._transform_readings_to_coordinates(readings), duration
+        
 
     def custom_rotate(self, degrees):
         def get_rotate_wheel_power(degrees):
@@ -205,3 +227,62 @@ class Vehicle:
         
     def detect_objects(self):
         return self.objdet.predict(self.get_vision())
+    
+    def _determine_yaw_delta(self, xy_coord):
+        '''
+         x,  y (starting coordinate)
+        _x, _y (target coordinates)
+        dx, dy (delta between coordinates)
+        '''
+        x, y, yaw = self.odometer.get_vehicle_state()
+        _x, _y = xy_coord
+        dx = (_x - x)
+        dy = (_y - y)
+        desired_yaw = math.atan2(dy, dx)
+        delta_yaw = (desired_yaw - yaw)
+        delta_yaw_degrees = math.degrees(delta_yaw)
+        return (_x, _y), delta_yaw_degrees
+
+    def _move_to_coordinate(self, target_coord) -> None:
+        target_x, target_y = target_coord 
+        while True:
+            self._move(direction='foward', cm=23)
+            x, y, yaw = self.odometer.get_vehicle_state()
+            if x == target_x and y == target_y:
+                break
+        
+    def follow_route(self, route)-> None:
+        '''Given a route of coordinate pair (x,y) steps, the vehicle
+        will move to each coordinate until coordinate list is empty'''
+        while route:
+            target_x, target_y, _ = list(route.pop(0).values())
+            target_coord, delta_yaw_degrees = self._determine_yaw_delta(xy_coord=(target_x, target_y)) #TODO 
+            self.custom_rotate(degrees=delta_yaw_degrees)
+            self._move_to_coordiate(target_coord)
+    
+    def return_to_origin(self) -> None:
+        #TODO USE THIS AS TEMPLATE TO CREATE PATH FROM COORD TO COORD)
+        # get route to origin
+        route_to_origin = self.odometer._all_prior_vehicle_states[::-1]
+        TESTING_route_to_origin = [{'x_coord': 325, 'y_coord': 325, 'yaw': 0, 'duration': 0, 'direction': 'forward'}, {'x_coord': 325, 'y_coord': 302, 'yaw': 0, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 325, 'y_coord': 279, 'yaw': 0, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 325, 'y_coord': 279, 'yaw': 30, 'duration': 0, 'direction': 'left'}, {'x_coord': 314, 'y_coord': 259, 'yaw': 30, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 314, 'y_coord': 259, 'yaw': 0, 'duration': 0, 'direction': 'right'}, {'x_coord': 314, 'y_coord': 236, 'yaw': 0, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 314, 'y_coord': 213, 'yaw': 0, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 314, 'y_coord': 213, 'yaw': -30, 'duration': 0, 'direction': 'right'}, {'x_coord': 325, 'y_coord': 193, 'yaw': -30, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 336, 'y_coord': 173, 'yaw': -30, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 336, 'y_coord': 173, 'yaw': -60, 'duration': 0, 'direction': 'right'}, {'x_coord': 356, 'y_coord': 161, 'yaw': -60, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 376, 'y_coord': 149, 'yaw': -60, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 376, 'y_coord': 149, 'yaw': -90, 'duration': 0, 'direction': 'right'}, {'x_coord': 399, 'y_coord': 149, 'yaw': -90, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 422, 'y_coord': 149, 'yaw': -90, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 445, 'y_coord': 149, 'yaw': -90, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 445, 'y_coord': 149, 'yaw': -60, 'duration': 0, 'direction': 'left'}, {'x_coord': 425, 'y_coord': 161, 'yaw': -60, 'duration': 0.45, 'direction': 'backward'}, {'x_coord': 405, 'y_coord': 173, 'yaw': -60, 'duration': 0.45, 'direction': 'backward'}, {'x_coord': 385, 'y_coord': 185, 'yaw': -60, 'duration': 0.45, 'direction': 'backward'}, {'x_coord': 385, 'y_coord': 185, 'yaw': -90, 'duration': 0, 'direction': 'right'}, {'x_coord': 408, 'y_coord': 185, 'yaw': -90, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 408, 'y_coord': 185, 'yaw': -120, 'duration': 0, 'direction': 'right'}, {'x_coord': 428, 'y_coord': 196, 'yaw': -120, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 428, 'y_coord': 196, 'yaw': -150, 'duration': 0, 'direction': 'right'}, {'x_coord': 439, 'y_coord': 216, 'yaw': -150, 'duration': 0.45, 'direction': 'forward'}][::-1]
+        # I have my route to origin and my vehicle state is at the current vehicle position
+        # all yaws in route to origin are the angles at which the movement forward was made --> - yaw will reverse step
+        while len(TESTING_route_to_origin) > 0:
+            #1. get the coordinate i landed at and the yaw that got me there
+            #2. adjust my current yaw such that its the negative of the yaw that got me there (- yaw)
+            #3. Move unit
+            x, y, forward_yaw, duration, direction = list(TESTING_route_to_origin.pop(0).values())
+            opp_direction = ('forward' if direction == 'backward' else 'backward')
+            current_vehicle_orientation = self.odometer.data['yaw']
+            desired_vehicle_orientation = current_vehicle_orientation - 180
+            delta_vehicle_orientation = (current_vehicle_orientation + desired_vehicle_orientation) % 360
+            self.custom_rotate(degrees=delta_vehicle_orientation)
+            if duration:
+                self._move_for_duration(duration=duration, direction=opp_direction)
+        self.halt()
+        self.custom_rotate(180)
+    
+    def navigate(self, grid, start, end):
+        grid 
+        gps = AStar(world=)
+        pass 

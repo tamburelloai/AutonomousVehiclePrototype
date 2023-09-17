@@ -19,25 +19,32 @@ class MainWindow:
         self.font = pygame.font.Font(None, 36)
         self.obstacle_cache = defaultdict(int)
         self._all_found_obstacle_coords = []
-        self.dashcam_display_offset = (Constant.GRID_WIDTH+1, (Constant.HEIGHT - Constant.DASHCAM_HEIGHT - 98))
+        self.dashcam_display_offset = (Constant.GRID_WIDTH+1, 0)
     
     def _set_modes(self) -> None:
         self.mode = {}
-        self.mode['object_detection'] = {'status': True}
-        self.mode['mapping'] = {'status': True}
+        self.mode['object_detection'] = {'status': False}
+        self.mode['mapping'] = {'status': False}
+        self.mode['search'] = {'status': False}
+        self.mode['control_mode'] = {'status': 'manual'}
         
     def _load_icons(self) -> None:
-        self.car_icon = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/car_icon.png'), (30, 30))
+        self.car_icon = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/car_icon.png'), (30, 30))
         self.car_rect = self.car_icon.get_rect()
         self.object_detection_icon_on = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/object_detection_on.png'), (250, 30))
         self.object_detection_icon_off = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/object_detection_off.png'), (250, 30))
         self.mapping_icon_on = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/mapping_on.png'), (250, 30))
         self.mapping_icon_off = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/mapping_off.png'), (250, 30))
+        self.astar_icon = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/astar.png'), (250, 30))
+        self.r2o_icon = pygame.transform.scale(pygame.image.load('/home/pi/Freenove/Code/Server/assets/return_to_origin.png'), (250, 30))
      
     def update_dashcam(self, dashcam_view):
         resized_image = cv2.resize(dashcam_view, (Constant.DASHCAM_WIDTH-1, Constant.DASHCAM_HEIGHT))
         image_surface = pygame.surfarray.make_surface(resized_image)
         self.screen.blit(image_surface, self.dashcam_display_offset)
+    
+    def draw_gui_boundaries(self):
+        pygame.draw.line(self.screen, Color.OFFWHITE, (0, Constant.GRID_HEIGHT), (Constant.WIDTH, Constant.GRID_HEIGHT), Constant.LINEWIDTH)
         
     def draw_mapping_grid(self):
         for x in range(0, Constant.GRID_WIDTH, Constant.CELL_SIZE):
@@ -45,15 +52,23 @@ class MainWindow:
         for y in range(0, Constant.GRID_HEIGHT, Constant.CELL_SIZE):
             pygame.draw.line(self.screen, Color.OFFWHITE, (0, y), (Constant.GRID_WIDTH, y), Constant.LINEWIDTH)
     
-    def draw_text_options(self):
-        if self.mode['object_detection']:
-            self.screen.blit(self.object_detection_icon_on, (10, Constant.GRID_HEIGHT + 10))
+    def draw_options(self):
+        base_x_offset = 60
+        base_y_offset = Constant.GRID_HEIGHT + 10
+        additional_x_offset = 300
+        additional_y_offset = 40
+        if self.mode['object_detection']['status']:
+            self.screen.blit(self.object_detection_icon_on, (base_x_offset, base_y_offset))
         else:
-            self.screen.blit(self.object_detection_icon_off, (10, Constant.GRID_HEIGHT + 10))
-        if self.mode['mapping']:
-            self.screen.blit(self.mapping_icon_on, (310, Constant.GRID_HEIGHT + 10))
+            self.screen.blit(self.object_detection_icon_off, (base_x_offset, base_y_offset))
+        
+        if self.mode['mapping']['status']:
+            self.screen.blit(self.mapping_icon_on, (base_x_offset + additional_x_offset, base_y_offset))
         else:
-            self.screen.blit(self.mapping_icon_off, (310, Constant.GRID_HEIGHT + 10))
+            self.screen.blit(self.mapping_icon_off,(base_x_offset + additional_x_offset, base_y_offset))
+            
+        self.screen.blit(self.astar_icon, (base_x_offset, base_y_offset + additional_y_offset))
+        self.screen.blit(self.r2o_icon, (base_x_offset + additional_x_offset, base_y_offset + additional_y_offset))
     
     def draw_vehicle_state(self, vehicle_state):
         x, y, yaw = vehicle_state
@@ -61,10 +76,18 @@ class MainWindow:
         y_offset = 50
         coord_location = (x_offset, y_offset)
         yaw_location = (x_offset, y_offset + 50)
-        vehicle_coord = f'GRID LOCATION: ({x}, {y})'
-        vehicle_yaw   = f'          YAW: {yaw}'
-        self.screen.blit(self.font.render(vehicle_coord, True, Color.WHITE), coord_location) 
-        self.screen.blit(self.font.render(vehicle_yaw, True, Color.WHITE), yaw_location) 
+        vehicle_info = f'GRID LOCATION: ({x}, {y}) [{yaw}]'
+        self.screen.blit(self.font.render(vehicle_info, True, Color.WHITE), (Constant.GRID_WIDTH + 5, Constant.DASHCAM_HEIGHT + 5)) 
+    
+    def draw_autonomous_manual(self):
+        control_mode = self.mode['control_mode']['status']
+        color = Color.DARKBLUE if control_mode == 'manual' else Color.LIGHTBLUE
+        self.screen.blit(self.font.render("CONTROL MODE: ", True, Color.WHITE), (Constant.GRID_WIDTH + 5, Constant.DASHCAM_HEIGHT + 30)) 
+        self.screen.blit(self.font.render(control_mode.upper(), True, color), (Constant.GRID_WIDTH + 220, Constant.DASHCAM_HEIGHT + 30)) 
+    
+    def draw_best_path(self, optimal_path):
+        #TODO
+        pass
     
     def draw_prior_positions(self):
         pygame.draw.lines(self.screen, Color.BLUE, False, self.prior_positions, 1)
@@ -194,12 +217,14 @@ class MainWindow:
     
     def flip(self, vehicle_state, obstacle_coords, dashcam_view, objects_detected):
         self.screen.fill((0, 0, 0))
+        self.draw_gui_boundaries()
         if self.mode['mapping']['status'] == True:
             self.update_vehicle_obstacle_readings(vehicle_state, obstacle_coords)
         self.update_dashcam(dashcam_view)
         if self.mode['object_detection']['status'] == True:
             self.draw_bounding_boxes(objects_detected)
-        self.draw_text_options()
+        self.draw_options()
+        self.draw_autonomous_manual()
         #self.debug_print()
         pygame.display.flip()
            
