@@ -10,7 +10,7 @@ from gui.main_window import MainWindow
 import numpy as np
 import pickle
 from core.utils import Constant, Color
-from core.utils import build_grid_from_gui
+from core.utils import build_grid_from_environment
 import threading
 
 
@@ -71,8 +71,11 @@ if __name__ == "__main__":
                     if event.key == ord('f'):
                         window.mode['search']['status'] = True
                         grid = build_grid_from_environment(window)
-                        vehicle.navigate(grid, start, stop)
-                        window.mode['search']['status'] = True
+                        start_xy = (0, 0)
+                        goal_xy = (Constant.GRID_SIZE, Constant.GRID_SIZE)
+                        vehicle.calculate_optimal_path(grid, start_xy, goal_xy)
+                        window.optimal_path_array = vehicle.gps.rgb_image
+                        window.mode['search']['status'] = False
                 else:
                     vehicle.halt()
             dashcam_view = vehicle.get_vision()

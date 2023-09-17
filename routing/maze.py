@@ -8,26 +8,6 @@ from search import AStar, Gridworld, Cell
 plt.ion()
 
 
-def convert_to_image(optimal_path, world):
-    for (x, y) in optimal_path:
-        world.w[x, y] = 1
-    traversed_grid = world.w
-    if len(traversed_grid.shape) == 3:
-        traversed_grid = traversed_grid.squeeze()
-    assert len(traversed_grid.shape) == 2
-    M, N = traversed_grid.shape
-    rgb_image = np.zeros((M, N, 3))
-    for i in range(M):
-        for j in range(N):
-            if traversed_grid[i, j] == 0:
-                r, g, b = 0, 0, 0
-            elif traversed_grid[i, j] == 1:
-                r, g, b = 0, 0, 254
-            elif traversed_grid[i, j] == 4:
-                r, g, b = 254, 0, 0
-            rgb_image[i, j, :] = (r, g, b)
-    rgb_image = rgb_image.astype(int)
-    return rgb_image
 
 
 

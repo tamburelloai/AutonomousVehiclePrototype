@@ -13,13 +13,13 @@ class MainWindow:
     def __init__(self):
         self.screen = pygame.display.set_mode((Constant.WIDTH, Constant.HEIGHT))
         self.prior_positions = []
-        self._all_found_obstacles = []
+        self.all_found_obstacle_coordinates = []
         self._load_icons()
         self._set_modes()
         self.font = pygame.font.Font(None, 36)
         self.obstacle_cache = defaultdict(int)
-        self._all_found_obstacle_coords = []
         self.dashcam_display_offset = (Constant.GRID_WIDTH+1, 0)
+        self.optimal_path_array = None
     
     def _set_modes(self) -> None:
         self.mode = {}
@@ -157,15 +157,13 @@ class MainWindow:
         if not coordinates:
             return
         x, y = coordinates
-        self.obstacle_cache[(x, y)] += 0.10
-        opacity_val = max(1, self.obstacle_cache[(x,y)])
-        obstacle = pygame.draw.rect(self.screen, (255, 0, 0, opacity_val), (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
-        self._all_found_obstacles.append(obstacle)  # Store the rect in the list
+        obstacle = pygame.draw.rect(self.screen, Color.RED, (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
+        self.all_found_obstacle_coordinates.append(coordinates)  # Store the rect in the list
 
     def _redraw_all_found_obstacles(self):
-        for obstacle in self._all_found_obstacles:
-            pygame.draw.rect(self.screen, Color.RED, obstacle)  # Redraw all stored obstacle rects
-    
+        for (x, y) in self.all_found_obstacle_coords:
+            pygame.draw.rect(self.screen, Color.RED, (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
+
     def draw_servo_sweep_coords(self, coordinates_list) -> None:
         for coordinates in coordinates_list:
             self.update_obstacle_location(coordinates) 
@@ -211,13 +209,14 @@ class MainWindow:
     def draw_bounding_boxes(self, preds):
         for pred in preds:
             self._draw_bounding_box(pred)
-        
+
     def debug_print(self):
         print(self.prior_positions)
     
     def flip(self, vehicle_state, obstacle_coords, dashcam_view, objects_detected):
         self.screen.fill((0, 0, 0))
         self.draw_gui_boundaries()
+        self.draw_optimal_path()
         if self.mode['mapping']['status'] == True:
             self.update_vehicle_obstacle_readings(vehicle_state, obstacle_coords)
         self.update_dashcam(dashcam_view)
@@ -227,5 +226,18 @@ class MainWindow:
         self.draw_autonomous_manual()
         #self.debug_print()
         pygame.display.flip()
-           
+
+    def draw_optimal_path(self) -> None:
+        if not self.optimal_path_array:
+            return
+        else:
+            M, N = self.optimal_path_array.shape
+            for i in range(M):
+                for j in range(N):
+                    color = tuple(self.optimal_path_array[i, j, :])
+                    pygame.draw.rect(self.screen, color, (i, j, Constant.CELL_SIZE, Constant.CELL_SIZE))
+
+
+
+
 

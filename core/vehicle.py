@@ -14,7 +14,9 @@ from core.odometer import Odometer
 from core.objdet import ObjDetModel
 from core.utils import *
 from routing.search import AStar
+from routing.maze import Gridworld
 import os
+import math
 
 
 class Vehicle:
@@ -33,6 +35,8 @@ class Vehicle:
         self.max_ultrasonic_distance = 40
         self._init_camera()
         self.objdet = ObjDetModel()
+        self.gps = AStar()
+        self.optimal_path = None
 
     def _init_camera(self):
         self.camera = Picamera2()
@@ -282,7 +286,8 @@ class Vehicle:
         self.halt()
         self.custom_rotate(180)
     
-    def navigate(self, grid, start, end):
-        grid 
-        gps = AStar(world=)
-        pass 
+    def calculate_optimal_path(self, grid, start_coord, target_coord) -> None:
+        self.gps.initialize_grid(grid)
+        self.optimal_path = self.gps(start_coord, target_coord)
+
+

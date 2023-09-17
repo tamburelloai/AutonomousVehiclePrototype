@@ -60,6 +60,9 @@ class Constant:
     LINEWIDTH = 1
     CAMERA_RESOLUTION = (640, 480)
     CAMERA_FPS = 30
+    OBSTACLE_INDICATOR = 4
+    PATH_INDICATOR = 1
+
 
 class Color:
     WHITE = (255, 255, 255)
@@ -73,11 +76,13 @@ class Color:
 
 def apply_environment_obstacles(grid, obstacle_coordinates):
     for (x,y) in obstacle_coordinates:
-        grid[x, y] = 4
+        grid[x, y] = Constant.OBSTACLE_INDICATOR
     return grid
 
 def build_grid_from_environment(window):
     grid = np.zeros((Constant.GRID_HEIGHT, Constant.GRID_WIDTH))
-    obstacles = window._all_found_obstacles
-    grid = apply_environment_obstacles(grid, obstacles)
+    grid = apply_environment_obstacles(
+        grid=grid,
+        obstacle_coordinates=window.all_found_obstacle_coordinates
+    )
     return grid

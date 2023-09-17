@@ -66,7 +66,7 @@ class Gridworld:
         if self._is_valid_coordinate(x, y):
             #TODO implement such that considering the current yaw, get the coords to left and right of vehicle coord
             # TODO: and make sure that they are not 4 either ===> Finds wide enough space for the car to traverse
-            return self.w[x, y] != 4
+            return self.w[x, y] != Constant.OBSTACLE_INDICATOR
         else:
             return False
 
@@ -99,10 +99,52 @@ class Gridworld:
 
 
 class AStar:
-    def __init__(self, world:Gridworld) -> None:
-        self.world = world
+    def __init__(self, grid:np.ndarray) -> None:
+        self.world = None
+        self.traversed_grid = None
+        self.rgb_image = None
 
-    def search(self, start, goal) -> list:
+
+    def initialize_grid(self, grid:np.ndarray) -> None:
+        self.world = Gridworld(grid)
+
+    def _init_grid_cell(self, coordinates:tuple):
+        cell = Cell()
+        cell.position = coordinates
+        return cell
+
+    def _add_path_to_grid(self) -> None:
+        for (x, y) in self.optimal_path:
+            self.world.w[x, y] = Constant.PATH_INDICATOR
+
+    def _get_traversed_grid(self) -> None:
+        traversed_grid = self.world.w
+        if len(traversed_grid.shape) == 3:
+            traversed_grid = traversed_grid.squeeze()
+        assert len(traversed_grid.shape) == 2
+        self.traversed_grid = traversed_grid
+
+    def _init_image(self) -> tuple:
+        self._get_traversed_grid()
+        M, N = self.traversed_grid.shape
+        self.rgb_image = np.zeros((M, N, 3))
+        return (M, N)
+
+    def build_optimal_path_image(self) -> None:
+        self._add_path_to_grid()
+        M, N = self._init_image()
+        for i in range(M):
+            for j in range(N):
+                if self.traversed_grid[i, j] == 0:
+                    r, g, b = 0, 0, 0
+                elif self.traversed_grid[i, j] == 1:
+                    r, g, b = 0, 0, 254
+                elif self.traversed_grid[i, j] == 4:
+                    r, g, b = 254, 0, 0
+                self.rgb_image[i, j, :] = (r, g, b)
+        self.rgb_image = self.rgb_image.astype(int)
+
+    def search(self, start:Cell, goal:Cell) -> None:
         """
         Implementation of a start algorithm.
         world : Object of the world object.
@@ -112,7 +154,6 @@ class AStar:
         _open = []
         _closed = []
         _open.append(start)
-
         while _open:
             min_f = np.argmin([n.f for n in _open])
             current = _open[min_f]
@@ -137,7 +178,15 @@ class AStar:
             path.append(current.position)
             current = current.parent
         path.append(current.position)
-        return path[::-1]
+        self.optimal_path = path[::-1]
+        print(f'Optimal path from {start.position} to {goal.position} calculated')
+
+    def __call__(self, start_coord:tuple, target_coord:tuple):
+        start_cell = self._init_grid_cell(start_coord)
+        target_cell = self._init_grid_cell(target_coord)
+        self.search(start_cell, target_cell)
+        self.build_optimal_path_image()
+
 
 
 if __name__ == "__main__":
