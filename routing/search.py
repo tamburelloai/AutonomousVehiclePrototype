@@ -1,18 +1,5 @@
-"""
-The A* algorithm combines features of uniform-cost search and pure heuristic search to
-efficiently compute optimal solutions.
-
-The A* algorithm is a best-first search algorithm in which the cost associated with a
-node is f(n) = g(n) + h(n), where g(n) is the cost of the path from the initial state to
-node n and h(n) is the heuristic estimate or the cost or a path from node n to a goal.
-
-The A* algorithm introduces a heuristic into a regular graph-searching algorithm,
-essentially planning ahead at each step so a more optimal decision is made. For this
-reason, A* is known as an algorithm with brains.
-
-https://en.wikipedia.org/wiki/A*_search_algorithm
-"""
 import numpy as np
+from core.utils import Constant, Color
 
 
 class Cell:
@@ -64,11 +51,19 @@ class Gridworld:
 
     def _is_traversable(self, x, y):
         if self._is_valid_coordinate(x, y):
-            #TODO implement such that considering the current yaw, get the coords to left and right of vehicle coord
-            # TODO: and make sure that they are not 4 either ===> Finds wide enough space for the car to traverse
-            return self.w[x, y] != Constant.OBSTACLE_INDICATOR
-        else:
-            return False
+            if self.w[x, y] == Constant.OBSTACLE_INDICATOR:
+                return False
+            else:
+                for i in range(-2, -2):
+                    dx, dy = x+i, y+i
+                    if not self._is_valid_coordinate(dx, dy):
+                        continue
+                    else:
+                        if self.w[dx, dy] == Constant.OBSTACLE_INDICATOR:
+                            return False
+            return True
+        return False
+
 
     def get_neigbors(self, cell):
         """
@@ -99,7 +94,7 @@ class Gridworld:
 
 
 class AStar:
-    def __init__(self, grid:np.ndarray) -> None:
+    def __init__(self) -> None:
         self.world = None
         self.traversed_grid = None
         self.rgb_image = None
@@ -115,6 +110,8 @@ class AStar:
 
     def _add_path_to_grid(self) -> None:
         for (x, y) in self.optimal_path:
+            x = int(x//6)
+            y = int(y//6)
             self.world.w[x, y] = Constant.PATH_INDICATOR
 
     def _get_traversed_grid(self) -> None:
@@ -136,11 +133,11 @@ class AStar:
         for i in range(M):
             for j in range(N):
                 if self.traversed_grid[i, j] == 0:
-                    r, g, b = 0, 0, 0
+                    r, g, b = Color.BLACK
                 elif self.traversed_grid[i, j] == 1:
-                    r, g, b = 0, 0, 254
+                    r, g, b = Color.GREEN
                 elif self.traversed_grid[i, j] == 4:
-                    r, g, b = 254, 0, 0
+                    r, g, b = Color.RED
                 self.rgb_image[i, j, :] = (r, g, b)
         self.rgb_image = self.rgb_image.astype(int)
 
@@ -187,24 +184,3 @@ class AStar:
         self.search(start_cell, target_cell)
         self.build_optimal_path_image()
 
-
-
-if __name__ == "__main__":
-    mock_grid = np.zeros((5, 5))
-    mock_grid[1, 1] = 4
-    print(mock_grid)
-    world = Gridworld(mock_grid)
-    astar = AStar(world=world)
-
-    # Start position and goal
-    start = Cell()
-    start.position = (0, 0)
-    goal = Cell()
-    goal.position = (4, 4)
-
-    print(f"path from {start.position} to {goal.position}")
-    res = astar.search(start, goal)
-    #   Just for visual reasons.
-    for i in res:
-        world.w[i] = 1
-    print(world.w)

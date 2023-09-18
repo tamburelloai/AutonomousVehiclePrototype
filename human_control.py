@@ -12,6 +12,8 @@ import pickle
 from core.utils import Constant, Color
 from core.utils import build_grid_from_environment
 import threading
+import matplotlib.pyplot as plt
+plt.ion()
 
 
 def get_image_surface(arr: np.ndarray):
@@ -21,6 +23,7 @@ def pickle_servo_angles(servo_angles):
     with open("servo_angles.pickle", "wb") as f:
         pickle.dump(servo_angles, f)
         
+fig, ax = None, None
 
 if __name__ == "__main__":
     try:
@@ -69,12 +72,19 @@ if __name__ == "__main__":
                         else:
                             window.mode['mapping']['status'] = True
                     if event.key == ord('f'):
+                        fig, ax = None, None
                         window.mode['search']['status'] = True
                         grid = build_grid_from_environment(window)
                         start_xy = (0, 0)
-                        goal_xy = (Constant.GRID_SIZE, Constant.GRID_SIZE)
+                        goal_xy = (Constant.GRID_SIZE-1, Constant.GRID_SIZE-1)
                         vehicle.calculate_optimal_path(grid, start_xy, goal_xy)
+                        print(vehicle.gps.optimal_path)
                         window.optimal_path_array = vehicle.gps.rgb_image
+                        if not fig and not ax:
+                            fig, ax = plt.subplots()
+                            ax.imshow(vehicle.gps.rgb_image)
+                            plt.pause(1)
+                            plt.show()
                         window.mode['search']['status'] = False
                 else:
                     vehicle.halt()
@@ -82,7 +92,6 @@ if __name__ == "__main__":
             if window.mode['object_detection']['status'] == True:
                 objects_detected = vehicle.detect_objects()
             window.flip(vehicle_state, obstacle_coords, dashcam_view, objects_detected)           
-            print(vehicle.odometer._all_prior_vehicle_states)
     except KeyboardInterrupt:
         pickle_servo_angles(vehicle.servo_angles)
 

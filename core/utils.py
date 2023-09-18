@@ -76,11 +76,12 @@ class Color:
 
 def apply_environment_obstacles(grid, obstacle_coordinates):
     for (x,y) in obstacle_coordinates:
+        x, y = int(x//6), int(y//6)
         grid[x, y] = Constant.OBSTACLE_INDICATOR
     return grid
 
 def build_grid_from_environment(window):
-    grid = np.zeros((Constant.GRID_HEIGHT, Constant.GRID_WIDTH))
+    grid = np.zeros((Constant.GRID_SIZE, Constant.GRID_SIZE))
     grid = apply_environment_obstacles(
         grid=grid,
         obstacle_coordinates=window.all_found_obstacle_coordinates

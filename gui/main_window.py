@@ -161,7 +161,7 @@ class MainWindow:
         self.all_found_obstacle_coordinates.append(coordinates)  # Store the rect in the list
 
     def _redraw_all_found_obstacles(self):
-        for (x, y) in self.all_found_obstacle_coords:
+        for (x, y) in self.all_found_obstacle_coordinates:
             pygame.draw.rect(self.screen, Color.RED, (x, y, Constant.CELL_SIZE, Constant.CELL_SIZE))
 
     def draw_servo_sweep_coords(self, coordinates_list) -> None:
@@ -215,8 +215,8 @@ class MainWindow:
     
     def flip(self, vehicle_state, obstacle_coords, dashcam_view, objects_detected):
         self.screen.fill((0, 0, 0))
+        self.draw_mapping_grid()
         self.draw_gui_boundaries()
-        self.draw_optimal_path()
         if self.mode['mapping']['status'] == True:
             self.update_vehicle_obstacle_readings(vehicle_state, obstacle_coords)
         self.update_dashcam(dashcam_view)
@@ -226,16 +226,6 @@ class MainWindow:
         self.draw_autonomous_manual()
         #self.debug_print()
         pygame.display.flip()
-
-    def draw_optimal_path(self) -> None:
-        if not self.optimal_path_array:
-            return
-        else:
-            M, N = self.optimal_path_array.shape
-            for i in range(M):
-                for j in range(N):
-                    color = tuple(self.optimal_path_array[i, j, :])
-                    pygame.draw.rect(self.screen, color, (i, j, Constant.CELL_SIZE, Constant.CELL_SIZE))
 
 
 

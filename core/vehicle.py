@@ -17,6 +17,7 @@ from routing.search import AStar
 from routing.maze import Gridworld
 import os
 import math
+import matplotlib.pyplot as plt
 
 
 class Vehicle:
@@ -268,10 +269,9 @@ class Vehicle:
         #TODO USE THIS AS TEMPLATE TO CREATE PATH FROM COORD TO COORD)
         # get route to origin
         route_to_origin = self.odometer._all_prior_vehicle_states[::-1]
-        TESTING_route_to_origin = [{'x_coord': 325, 'y_coord': 325, 'yaw': 0, 'duration': 0, 'direction': 'forward'}, {'x_coord': 325, 'y_coord': 302, 'yaw': 0, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 325, 'y_coord': 279, 'yaw': 0, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 325, 'y_coord': 279, 'yaw': 30, 'duration': 0, 'direction': 'left'}, {'x_coord': 314, 'y_coord': 259, 'yaw': 30, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 314, 'y_coord': 259, 'yaw': 0, 'duration': 0, 'direction': 'right'}, {'x_coord': 314, 'y_coord': 236, 'yaw': 0, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 314, 'y_coord': 213, 'yaw': 0, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 314, 'y_coord': 213, 'yaw': -30, 'duration': 0, 'direction': 'right'}, {'x_coord': 325, 'y_coord': 193, 'yaw': -30, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 336, 'y_coord': 173, 'yaw': -30, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 336, 'y_coord': 173, 'yaw': -60, 'duration': 0, 'direction': 'right'}, {'x_coord': 356, 'y_coord': 161, 'yaw': -60, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 376, 'y_coord': 149, 'yaw': -60, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 376, 'y_coord': 149, 'yaw': -90, 'duration': 0, 'direction': 'right'}, {'x_coord': 399, 'y_coord': 149, 'yaw': -90, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 422, 'y_coord': 149, 'yaw': -90, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 445, 'y_coord': 149, 'yaw': -90, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 445, 'y_coord': 149, 'yaw': -60, 'duration': 0, 'direction': 'left'}, {'x_coord': 425, 'y_coord': 161, 'yaw': -60, 'duration': 0.45, 'direction': 'backward'}, {'x_coord': 405, 'y_coord': 173, 'yaw': -60, 'duration': 0.45, 'direction': 'backward'}, {'x_coord': 385, 'y_coord': 185, 'yaw': -60, 'duration': 0.45, 'direction': 'backward'}, {'x_coord': 385, 'y_coord': 185, 'yaw': -90, 'duration': 0, 'direction': 'right'}, {'x_coord': 408, 'y_coord': 185, 'yaw': -90, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 408, 'y_coord': 185, 'yaw': -120, 'duration': 0, 'direction': 'right'}, {'x_coord': 428, 'y_coord': 196, 'yaw': -120, 'duration': 0.45, 'direction': 'forward'}, {'x_coord': 428, 'y_coord': 196, 'yaw': -150, 'duration': 0, 'direction': 'right'}, {'x_coord': 439, 'y_coord': 216, 'yaw': -150, 'duration': 0.45, 'direction': 'forward'}][::-1]
         # I have my route to origin and my vehicle state is at the current vehicle position
         # all yaws in route to origin are the angles at which the movement forward was made --> - yaw will reverse step
-        while len(TESTING_route_to_origin) > 0:
+        while len(route_to_origin) > 0:
             #1. get the coordinate i landed at and the yaw that got me there
             #2. adjust my current yaw such that its the negative of the yaw that got me there (- yaw)
             #3. Move unit

@@ -4,7 +4,7 @@ import pygame
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from search import AStar, Gridworld, Cell
+from routing.search import AStar, Gridworld, Cell
 plt.ion()
 
 
@@ -99,74 +99,74 @@ def update_covered_cells(rect):
 
 
 
-if __name__ == '__main__':
-    pygame.init()
-    # Create a button
-    WHITE = (255, 255, 255)
-    BLACK = (0, 0, 0)
-    button_width = 200
-    button = Button("PLOT IMAGE", Constant.GRID_WIDTH - button_width - 10, 10, button_width, 20, action=button_action)
-    covered_cells = set()
-    grid_image = GridImage()
+# if __name__ == '__main__':
+#     pygame.init()
+#     # Create a button
+#     WHITE = (255, 255, 255)
+#     BLACK = (0, 0, 0)
+#     button_width = 200
+#     button = Button("PLOT IMAGE", Constant.GRID_WIDTH - button_width - 10, 10, button_width, 20, action=button_action)
+#     covered_cells = set()
+#     grid_image = GridImage()
 
-    screen = pygame.display.set_mode((Constant.GRID_WIDTH, Constant.GRID_HEIGHT))
-    fps = pygame.time.Clock()
-    rectangle_selection = 0
-    rectangles_storage = []
-    while True:
-        draw_mapping_grid()
-        for event in pygame.event.get():
-            raw_grid = button.handle_event(event)
-            if raw_grid is not None:
-                world = Gridworld(raw_grid)
-                astar = AStar(world=world)
-                start = Cell()
-                start.position = (0, 0)
-                goal = Cell()
-                N = raw_grid.shape[0] - 1
-                goal.position = (N, N)
-                print(f"path from {start.position} to {goal.position}")
-                optimal_path_coords = astar.search(start, goal)
-                print('PATH FOUND')
-                best_path_img_arr = convert_to_image(optimal_path=optimal_path_coords, world=world)
-                fig2, ax2 = plt.subplots()
-                ax2.imshow(best_path_img_arr)
-
-
-                # convert to string
-                for row in range(0, world.w.shape[0]):
-                    row_string = list(map(str, world.w[row, :].astype(int).tolist()))
-                    row_string = ''.join(row_string)
-                    # row_string = row_string.replace('0', '4')
-                    print(row_string)
+#     screen = pygame.display.set_mode((Constant.GRID_WIDTH, Constant.GRID_HEIGHT))
+#     fps = pygame.time.Clock()
+#     rectangle_selection = 0
+#     rectangles_storage = []
+#     while True:
+#         draw_mapping_grid()
+#         for event in pygame.event.get():
+#             raw_grid = button.handle_event(event)
+#             if raw_grid is not None:
+#                 world = Gridworld(raw_grid)
+#                 astar = AStar(world=world)
+#                 start = Cell()
+#                 start.position = (0, 0)
+#                 goal = Cell()
+#                 N = raw_grid.shape[0] - 1
+#                 goal.position = (N, N)
+#                 print(f"path from {start.position} to {goal.position}")
+#                 optimal_path_coords = astar.search(start, goal)
+#                 print('PATH FOUND')
+#                 best_path_img_arr = convert_to_image(optimal_path=optimal_path_coords, world=world)
+#                 fig2, ax2 = plt.subplots()
+#                 ax2.imshow(best_path_img_arr)
 
 
-                #reset grid
-                covered_cells = set()
-                screen.fill((0, 0, 0))
-                draw_mapping_grid()
+#                 # convert to string
+#                 for row in range(0, world.w.shape[0]):
+#                     row_string = list(map(str, world.w[row, :].astype(int).tolist()))
+#                     row_string = ''.join(row_string)
+#                     # row_string = row_string.replace('0', '4')
+#                     print(row_string)
 
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    rectangle_selection, rectangle_width, rectangle_height = 1, 1, 1
-                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
-                    rectangle_left = int(pygame.mouse.get_pos()[0]) - int((rectangle_width))
-                    rectangle_right = int(pygame.mouse.get_pos()[1]) - int((rectangle_height))
-                    rectangle_main = pygame.Rect(rectangle_left, rectangle_right, int(rectangle_width), int(rectangle_height))
-            elif event.type == pygame.MOUSEMOTION:
-                if rectangle_selection:
-                    if event.buttons[0]:
-                        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
-                        rectangle_main.w += event.rel[0]
-                        rectangle_main.h += event.rel[1]
-            elif event.type == pygame.MOUSEBUTTONUP:
-                rectangle_selection, rectangle_width, rectangle_height = 1, 1, 1
-                pygame.draw.rect(screen, (0, 255, 255), rectangle_main, 2, 3)
-                array(rectangles_storage.append(rectangle_main))
-                pygame.display.flip()
-                update_covered_cells(rectangle_main)
-        button.draw()
-        pygame.display.flip()
-        fps.tick(60)
+
+#                 #reset grid
+#                 covered_cells = set()
+#                 screen.fill((0, 0, 0))
+#                 draw_mapping_grid()
+
+#             if event.type == pygame.QUIT:
+#                 pygame.quit()
+#             if event.type == pygame.MOUSEBUTTONDOWN:
+#                 if event.button == 1:
+#                     rectangle_selection, rectangle_width, rectangle_height = 1, 1, 1
+#                     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+#                     rectangle_left = int(pygame.mouse.get_pos()[0]) - int((rectangle_width))
+#                     rectangle_right = int(pygame.mouse.get_pos()[1]) - int((rectangle_height))
+#                     rectangle_main = pygame.Rect(rectangle_left, rectangle_right, int(rectangle_width), int(rectangle_height))
+#             elif event.type == pygame.MOUSEMOTION:
+#                 if rectangle_selection:
+#                     if event.buttons[0]:
+#                         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+#                         rectangle_main.w += event.rel[0]
+#                         rectangle_main.h += event.rel[1]
+#             elif event.type == pygame.MOUSEBUTTONUP:
+#                 rectangle_selection, rectangle_width, rectangle_height = 1, 1, 1
+#                 pygame.draw.rect(screen, (0, 255, 255), rectangle_main, 2, 3)
+#                 array(rectangles_storage.append(rectangle_main))
+#                 pygame.display.flip()
+#                 update_covered_cells(rectangle_main)
+#         button.draw()
+#         pygame.display.flip()
+#         fps.tick(60)
