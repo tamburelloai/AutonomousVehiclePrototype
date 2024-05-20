@@ -1,22 +1,24 @@
-# Autonomous Vehicle Prototype
+# Autonomous Vehicle Prototype Project
 
-## TODO:
+## Overview
+This repository contains the codebase for an autonomous vehicle prototype that integrates various functionalities like object detection, mapping, and motion control. The project utilizes Python and is structured to facilitate contributions and further development of autonomous driving features.
 
-#### Separate concerns between tensorflow lite model and pycamera
+## Features
+- **Object Detection**: Utilizes TensorFlow Lite to recognize objects in real-time.
+- **Advanced Mapping**: Implements occupancy mapping and real-time updates with sensor data.
+- **Motion Control**: Supports manual control via keyboard inputs and automated navigation.
 
-#### Create streaming reading of picamera with picamera[array] method
-- Every one second capture a frame
-
-#### Implement wheel information and create Odometer Class
-- Populate with wheel information and correct methods for managing odometer data
-- handle movement mode (forward, backward, rotational)
-- update map if rotational
-- update for map if forward/backward
-- account for vehicle size in map
-- account for offset from init of map to handle map updating of objects
-- ie. map(index=(i,j)) is a function of (change of position from initialization, distance reading)
-    - technically, you could slap current map onto larger map if distance relative to start goes to new extreme.
-    - For example. distance from start in beginning iz zero and have 100x100 array. But, if go forward we'll have (101x100) array which we init as zeros and then combine (add) to original at equivalent indicies
+## Installation
+Clone this repository using:
+```
+git clone https://github.com/tamburelloai/AutonomousVehiclePrototype.git
+```
+Install required Python packages:
+```
+pip install -r requirements.txt
+```
 
 
-#### Implement Occupancy map
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
