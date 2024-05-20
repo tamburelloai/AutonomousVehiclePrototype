@@ -1,7 +1,7 @@
 # Autonomous Vehicle Prototype Project
 
 ## Overview
-This repository contains the codebase for an autonomous vehicle prototype that integrates various functionalities like object detection, mapping, and motion control. The project utilizes Python and is structured to facilitate contributions and further development of autonomous driving features.
+This repository hosts the Autonomous Vehicle Prototype project, developed as part of the **Internet of Things (CS437)** course at the **University of Illinois at Urbana-Champaign (UIUC)**. This project showcases an integration of object detection, mapping, and motion control functionalities, aimed at advancing autonomous driving technologies.
 
 ## Features
 - **Object Detection**: Utilizes TensorFlow Lite to recognize objects in real-time.
